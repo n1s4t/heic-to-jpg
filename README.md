@@ -2,6 +2,8 @@
 
 A fast, private, browser-based converter for HEIC and HEIF images. The application runs entirely in the browser. Images are decoded, resized, and converted locally using WebAssembly (`heic-to`) and the Canvas API.
 
+**Live Demo:** [https://heic-to-jpg-sigma.vercel.app/](https://heic-to-jpg-sigma.vercel.app/)
+
 **Created by [n1s4t](https://github.com/n1s4t)**
 
 ---
@@ -88,7 +90,7 @@ No build system or framework is required.
 
 ## Usage
 
-1. Open `heic-to-jpg-studio.html` in a modern web browser.
+1. Open the [Live Demo](https://heic-to-jpg-sigma.vercel.app/).
 2. Drag HEIC/HEIF files into the upload area or select them using the file picker.
 3. Select the required output format and conversion settings.
 4. Click **Convert All**.
@@ -106,8 +108,9 @@ No build system or framework is required.
 
 ```text
 HEIC-JPG-Studio/
-├── heic-to-jpg-studio.html
-└── README.md
+├── index.html
+├── README.md
+└── vercel.json
 ```
 
 ## Running Locally
@@ -117,7 +120,7 @@ No Node.js, npm, Python, or build process is required.
 Open:
 
 ```text
-heic-to-jpg-studio.html
+index.html
 ```
 
 in a modern browser such as Chrome, Edge, Firefox, or Safari.
