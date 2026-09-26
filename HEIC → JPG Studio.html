@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HEIC → JPG Studio</title>
+<style>
+:root{
+  --bg:#0b0d10;--panel:#13171c;--panel2:#1a1f26;--line:#2b323b;--text:#f5f7fa;--muted:#929aa6;
+  --accent:#7c5cff;--accent2:#a78cff;--good:#35d07f;--danger:#ff5d6c;--row:#171c22;--row-line:#29313a;
+  --input-bg:#101419;--chip:#12161b;--chip-line:#333b46;--chip-text:#aeb7c3;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f4f5f8;--panel:#ffffff;--panel2:#f0f1f5;--line:#e2e5eb;--text:#14161a;--muted:#666f7c;
+    --row:#fafbfc;--row-line:#e7eaef;--input-bg:#ffffff;--chip:#eef0f4;--chip-line:#dde1e8;--chip-text:#4a5361;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b0d10;--panel:#13171c;--panel2:#1a1f26;--line:#2b323b;--text:#f5f7fa;--muted:#929aa6;
+  --row:#171c22;--row-line:#29313a;--input-bg:#101419;--chip:#12161b;--chip-line:#333b46;--chip-text:#aeb7c3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(900px 500px at 50% -10%, color-mix(in srgb,var(--accent) 18%, transparent) 0, transparent 62%);color:var(--text);font:14px Inter,Segoe UI,Arial,sans-serif;min-height:100%}
+html,body{height:100%}
+.wrap{width:min(1100px,calc(100% - 32px));margin:34px auto 60px}
+.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}
+h1{font-size:34px;letter-spacing:-1.2px;margin:0 0 7px}
+.grad{background:linear-gradient(90deg,var(--text),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);line-height:1.5}
+.badge{padding:8px 11px;border:1px solid var(--chip-line);border-radius:999px;background:var(--chip);color:var(--chip-text);white-space:nowrap}
+.theme-toggle{border:1px solid var(--chip-line);background:var(--chip);color:var(--chip-text);border-radius:999px;padding:8px 11px;cursor:pointer;font-weight:600}
+.card{background:color-mix(in srgb,var(--panel) 94%, transparent);border:1px solid var(--line);border-radius:22px;box-shadow:0 24px 80px #0004;overflow:hidden}
+.drop{margin:18px;border:2px dashed color-mix(in srgb,var(--muted) 45%, transparent);border-radius:18px;padding:50px 22px;text-align:center;cursor:pointer;transition:.2s;background:var(--input-bg)}
+.drop:hover,.drop.drag{border-color:var(--accent2);background:color-mix(in srgb,var(--accent) 10%, var(--input-bg));transform:translateY(-1px)}
+.drop:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.drop .ico{font-size:42px;margin-bottom:10px}.drop b{font-size:18px}.drop p{margin:8px 0 0;color:var(--muted)}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;padding:0 18px 18px}
+button,select{font:inherit}
+.btn{border:1px solid var(--chip-line);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:11px;font-weight:700;cursor:pointer}
+.btn:hover:not(:disabled){filter:brightness(1.08)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.danger-outline{border-color:color-mix(in srgb,var(--danger) 50%, var(--chip-line))}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.settings{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px;padding:18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--panel2)}
+.setting{background:var(--row);border:1px solid var(--row-line);border-radius:13px;padding:12px;transition:opacity .15s}
+.setting.disabled{opacity:.45;pointer-events:none}
+.setting label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px}
+.setting strong{font-size:14px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{width:100%;background:var(--input-bg);color:var(--text);border:1px solid var(--chip-line);border-radius:8px;padding:8px}
+.stats{display:flex;gap:16px;padding:13px 18px;color:var(--muted);border-bottom:1px solid var(--line);font-size:12px;flex-wrap:wrap}
+.stats b{color:var(--text)}
+.list{padding:14px 18px;display:grid;gap:10px}
+.empty{color:var(--muted);text-align:center;padding:10px 0 4px;font-size:13px}
+.row{display:grid;grid-template-columns:72px minmax(0,1fr) auto auto auto;align-items:center;gap:14px;background:var(--row);border:1px solid var(--row-line);border-radius:14px;padding:10px}
+.thumb{width:72px;height:58px;object-fit:cover;border-radius:9px;background:var(--input-bg)}
+.fname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.meta{font-size:11px;color:var(--muted);margin-top:4px}
+.status{font-size:12px;color:var(--muted);min-width:90px;text-align:right}
+.status.ok{color:var(--good)}.status.bad{color:var(--danger)}
+.download{padding:8px 10px;font-size:12px}
+.remove{padding:8px 10px;font-size:14px;line-height:1;border-radius:9px;border:1px solid var(--row-line);background:transparent;color:var(--muted);cursor:pointer}
+.remove:hover{color:var(--danger);border-color:var(--danger)}
+.bottom{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.privacy{color:var(--muted);font-size:11px;line-height:1.5;max-width:650px}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.progress{height:6px;background:var(--panel2);margin:0 18px 18px;border-radius:99px;overflow:hidden;display:none}
+.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .15s}
+.toast{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--panel2);border:1px solid var(--chip-line);border-radius:12px;padding:12px 14px;box-shadow:0 15px 45px #0006;display:none;max-width:360px;z-index:50}
+@media(max-width:760px){
+  .settings{grid-template-columns:1fr 1fr}
+  .row{grid-template-columns:56px 1fr auto;grid-template-areas:"thumb name remove" "thumb status dl";row-gap:6px}
+  .row .thumb{grid-area:thumb}.row .fname-wrap{grid-area:name}.row .remove{grid-area:remove}.row .status{grid-area:status;text-align:left}.row .download{grid-area:dl}
+  .top{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><h1><span class="grad">HEIC → JPG Studio</span></h1><div class="sub">Fast, private, batch HEIC/HEIF conversion — processed entirely in your browser, nothing is uploaded.</div><div class="sub" style="margin-top:4px;font-size:12px;opacity:.75">Created by n1s4t · <a href="https://github.com/n1s4t" target="_blank" rel="noopener" style="color:inherit">github.com/n1s4t</a></div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="badge">🔒 No server upload</div>
+      <button class="theme-toggle" id="themeToggle" type="button" title="Toggle theme" aria-label="Toggle light/dark theme">🌓</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Add HEIC or HEIF photos">
+      <div class="ico">🖼️</div>
+      <b>Drop HEIC / HEIF photos here</b>
+      <p>or click to browse • multiple files supported</p>
+      <input id="picker" type="file" accept=".heic,.heif,image/heic,image/heif" multiple aria-hidden="true">
+    </div>
+
+    <div class="toolbar">
+      <button class="btn primary" id="add" type="button">＋ Add photos</button>
+      <button class="btn" id="clear" type="button" disabled>Clear all</button>
+      <button class="btn" id="retry" type="button" disabled>Retry failed</button>
+      <button class="btn danger-outline" id="cancel" type="button" disabled>Cancel</button>
+    </div>
+
+    <div class="settings">
+      <div class="setting" id="qualityWrap"><label for="quality">JPG quality</label><input id="quality" type="range" min="50" max="100" value="92"><strong id="qv">92%</strong></div>
+      <div class="setting"><label for="maxdim">Max dimension</label><select id="maxdim"><option value="0">Original</option><option value="4096">4096 px</option><option value="3000">3000 px</option><option value="2048">2048 px</option><option value="1600">1600 px</option><option value="1200">1200 px</option></select></div>
+      <div class="setting"><label for="format">Output</label><select id="format"><option value="jpg">JPG / JPEG</option><option value="png">PNG (lossless)</option><option value="webp">WebP</option></select></div>
+      <div class="setting"><label for="naming">Filename</label><select id="naming"><option value="same">Keep original name</option><option value="numbered">Add number</option><option value="timestamp">Add timestamp</option></select></div>
+    </div>
+
+    <div class="stats" role="status" aria-live="polite">
+      <span>Files: <b id="count">0</b></span>
+      <span>Converted: <b id="done">0</b></span>
+      <span>Failed: <b id="failed">0</b></span>
+      <span>Input size: <b id="size">0 B</b></span>
+      <span>Output size: <b id="outsize">0 B</b></span>
+    </div>
+
+    <div class="list" id="list"><div class="empty" id="emptyMsg">No photos added yet.</div></div>
+    <div class="progress" id="progress"><div class="bar" id="bar"></div></div>
+
+    <div class="bottom">
+      <div class="privacy">Your photos never leave this device. Conversion runs locally using an in-browser HEIC decoder and the canvas encoder. Note: EXIF metadata (camera info, GPS, capture date) is not copied into the converted file.</div>
+      <div class="actions"><button class="btn primary" id="convert" type="button" disabled>Convert all</button><button class="btn" id="zip" type="button" disabled>⬇ Download ZIP</button></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const picker=$('picker'),drop=$('drop'),list=$('list'),emptyMsg=$('emptyMsg');
+
+// ---- state ----
+let nextId=1;
+let items=[];              // [{id, file}]
+const results=new Map();   // id -> {ok, blob, name} | {ok:false, error}
+const thumbUrls=new Map(); // id -> object URL, tracked for cleanup
+let cancelled=false;
+let converting=false;
+
+// ---- theme ----
+const THEME_KEY='heic-studio-theme';
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t)}
+try{
+  const saved=localStorage.getItem(THEME_KEY);
+  if(saved)applyTheme(saved);
+}catch(e){/* storage unavailable, fall back to system theme */}
+$('themeToggle').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  const next=cur==='dark'?'light':'dark';
+  applyTheme(next);
+  try{localStorage.setItem(THEME_KEY,next)}catch(e){}
+};
+
+// ---- settings persistence (per-browser convenience only) ----
+try{
+  const savedSettings=JSON.parse(localStorage.getItem('heic-studio-settings')||'{}');
+  if(savedSettings.quality)$('quality').value=savedSettings.quality;
+  if(savedSettings.maxdim)$('maxdim').value=savedSettings.maxdim;
+  if(savedSettings.format)$('format').value=savedSettings.format;
+  if(savedSettings.naming)$('naming').value=savedSettings.naming;
+}catch(e){}
+function saveSettings(){
+  try{localStorage.setItem('heic-studio-settings',JSON.stringify({
+    quality:$('quality').value,maxdim:$('maxdim').value,format:$('format').value,naming:$('naming').value
+  }))}catch(e){}
+}
+['quality','maxdim','format','naming'].forEach(id=>$(id).addEventListener('change',saveSettings));
+
+// ---- add / drag+drop ----
+$('add').onclick=()=>picker.click();
+drop.onclick=()=>picker.click();
+drop.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();picker.click()}});
+picker.onchange=e=>{addFiles([...e.target.files]);picker.value=''};
+['dragenter','dragover'].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(x=>drop.addEventListener(x,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>addFiles([...e.dataTransfer.files]));
+
+$('quality').oninput=e=>$('qv').textContent=e.target.value+'%';
+$('format').onchange=()=>{
+  const isLossless=$('format').value==='png';
+  $('qualityWrap').classList.toggle('disabled',isLossless);
+};
+$('format').dispatchEvent(new Event('change'));
+
+function isHeic(f){return /\.(heic|heif)$/i.test(f.name)||/image\/hei[cf]/i.test(f.type)}
+function addFiles(arr){
+  const heicFiles=arr.filter(isHeic);
+  const skipped=arr.length-heicFiles.length;
+  heicFiles.forEach(f=>{
+    if(!items.some(it=>it.file.name===f.name&&it.file.size===f.size&&it.file.lastModified===f.lastModified)){
+      items.push({id:nextId++,file:f});
+    }
+  });
+  render();
+  if(heicFiles.length&&skipped)toast(`Added ${heicFiles.length} photo(s). Skipped ${skipped} non-HEIC file(s).`);
+  else if(heicFiles.length)toast(`Added ${heicFiles.length} photo(s).`);
+  else toast('No HEIC/HEIF files found in that selection.');
+}
+
+function render(){
+  list.innerHTML='';
+  if(!items.length){
+    list.appendChild(emptyMsg);
+  }else{
+    items.forEach(({id,file})=>{
+      const r=document.createElement('div');r.className='row';r.id='r'+id;
+      r.innerHTML=`<img class="thumb" alt="">
+        <div class="fname-wrap"><div class="fname">${esc(file.name)}</div><div class="meta">${fmt(file.size)} • waiting</div></div>
+        <div class="status">Ready</div>
+        <button class="btn download" type="button" disabled>Download</button>
+        <button class="remove" type="button" title="Remove" aria-label="Remove ${esc(file.name)}">✕</button>`;
+      r.querySelector('.download').onclick=()=>downloadResult(id);
+      r.querySelector('.remove').onclick=()=>removeItem(id);
+      list.appendChild(r);
+      makeThumb(id,file,r.querySelector('.thumb'));
+    });
+  }
+  updateStats();
+}
+
+function removeItem(id){
+  items=items.filter(it=>it.id!==id);
+  results.delete(id);
+  const url=thumbUrls.get(id);
+  if(url){URL.revokeObjectURL(url);thumbUrls.delete(id)}
+  render();
+}
+
+function updateStats(){
+  const ok=[...results.values()].filter(x=>x.ok);
+  const bad=[...results.values()].filter(x=>!x.ok);
+  $('count').textContent=items.length;
+  $('done').textContent=ok.length;
+  $('failed').textContent=bad.length;
+  $('size').textContent=fmt(items.reduce((a,b)=>a+b.file.size,0));
+  $('outsize').textContent=fmt(ok.reduce((a,r)=>a+(r.blob?r.blob.size:0),0));
+  $('convert').disabled=!items.length||converting;
+  $('clear').disabled=!items.length||converting;
+  $('retry').disabled=converting||!items.some(it=>results.get(it.id)?.ok===false);
+  $('zip').disabled=!ok.length;
+}
+
+async function makeThumb(id,f,img){
+  try{
+    if(window.HeicTo){
+      const b=await HeicTo({blob:f,type:'image/jpeg',quality:.6});
+      const url=URL.createObjectURL(b);
+      thumbUrls.set(id,url);
+      img.src=url;
+    }
+  }catch(e){ /* thumbnail is a nicety — a failed preview shouldn't block conversion */ }
+}
+
+function setStatus(id,text,cls){
+  const r=$('r'+id);if(!r)return;
+  const s=r.querySelector('.status');s.textContent=text;s.className='status '+(cls||'');
+}
+function setMeta(id,text){const r=$('r'+id);if(r)r.querySelector('.meta').textContent=text}
+
+async function convertOne(id){
+  const item=items.find(it=>it.id===id);
+  if(!item)return;
+  const f=item.file;
+  setStatus(id,'Converting…');setMeta(id,fmt(f.size)+' • decoding HEIC');
+  try{
+    if(!window.HeicTo) throw new Error('HEIC decoder failed to load. Check your connection and reload the page.');
+    const q=+$('quality').value/100;
+    const fmtSel=$('format').value;
+    const type=fmtSel==='png'?'image/png':fmtSel==='webp'?'image/webp':'image/jpeg';
+    const decoded=await HeicTo({blob:f,type,quality:q});
+    let blob=decoded;
+    const bmp=await createImageBitmap(decoded);
+    const max=+$('maxdim').value;
+    if(max && Math.max(bmp.width,bmp.height)>max){
+      const scale=max/Math.max(bmp.width,bmp.height);
+      const w=Math.max(1,Math.round(bmp.width*scale)),h=Math.max(1,Math.round(bmp.height*scale));
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      const ctx=c.getContext('2d');ctx.drawImage(bmp,0,0,w,h);
+      blob=await new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Canvas encoding failed')),type,q));
+      setMeta(id,`${w}×${h} • ${fmt(blob.size)}`);
+    }else{
+      setMeta(id,`${bmp.width}×${bmp.height} • ${fmt(blob.size)}`);
+    }
+    bmp.close();
+    const name=makeName(f.name,fmtSel,id);
+    results.set(id,{ok:true,blob,name});
+    const r=$('r'+id);if(r)r.querySelector('.download').disabled=false;
+    setStatus(id,'✓ Done','ok');
+  }catch(err){
+    console.error(err);
+    results.set(id,{ok:false,error:err});
+    setStatus(id,'Failed','bad');
+    setMeta(id,(err&&err.message)||'Conversion failed');
+  }
+}
+
+$('convert').onclick=()=>run(items.map(it=>it.id));
+$('retry').onclick=()=>run(items.map(it=>it.id).filter(id=>results.get(id)?.ok===false));
+$('cancel').onclick=()=>{cancelled=true;$('cancel').disabled=true;toast('Cancelling after in-progress files finish…')};
+
+const CONCURRENCY=3;
+async function run(ids){
+  if(!ids.length||converting)return;
+  converting=true;cancelled=false;
+  $('convert').disabled=true;$('retry').disabled=true;$('clear').disabled=true;$('cancel').disabled=false;
+  $('progress').style.display='block';$('bar').style.width='0';
+  let completed=0,cursor=0;
+  async function worker(){
+    while(cursor<ids.length){
+      if(cancelled)return;
+      const id=ids[cursor++];
+      await convertOne(id);
+      completed++;
+      $('bar').style.width=(completed/ids.length*100)+'%';
+      updateStats();
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,ids.length)},worker));
+  converting=false;
+  $('progress').style.display='none';$('bar').style.width='0';$('cancel').disabled=true;
+  updateStats();
+  toast(cancelled?'Conversion cancelled.':'Conversion finished.');
+}
+
+function makeName(original,ext,id){
+  let base=original.replace(/\.(heic|heif)$/i,'');
+  const mode=$('naming').value;
+  const outExt=ext==='jpg'?'jpg':ext;
+  if(mode==='numbered'){
+    const pos=items.findIndex(it=>it.id===id);
+    base+='_'+String(pos+1).padStart(3,'0');
+  }
+  if(mode==='timestamp')base+='_'+new Date().toISOString().replace(/[-:T.Z]/g,'').slice(0,14);
+  return base+'.'+outExt;
+}
+
+function downloadResult(id){
+  const r=results.get(id);if(!r||!r.ok)return;
+  const a=document.createElement('a');a.href=URL.createObjectURL(r.blob);a.download=r.name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+$('zip').onclick=async()=>{
+  const good=[...results.values()].filter(x=>x.ok);
+  if(!good.length)return;
+  $('zip').disabled=true;
+  try{
+    const zip=new JSZip();
+    const seen=new Map();
+    good.forEach(x=>{
+      let name=x.name;
+      const n=(seen.get(name)||0)+1;seen.set(name,n);
+      if(n>1){const dot=name.lastIndexOf('.');name=n>1?name.slice(0,dot)+`_${n}`+name.slice(dot):name}
+      zip.file(name,x.blob);
+    });
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='converted-photos.zip';document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+  }catch(e){
+    console.error(e);toast('Could not build the ZIP file.');
+  }finally{
+    $('zip').disabled=!good.length;
+  }
+};
+
+$('clear').onclick=()=>{
+  if(converting)return;
+  thumbUrls.forEach(url=>URL.revokeObjectURL(url));
+  thumbUrls.clear();
+  items=[];results.clear();
+  render();
+  $('progress').style.display='none';
+};
+
+function fmt(n){
+  if(n<1024)return n+' B';
+  if(n<1048576)return (n/1024).toFixed(1)+' KB';
+  if(n<1073741824)return (n/1048576).toFixed(1)+' MB';
+  return (n/1073741824).toFixed(1)+' GB';
+}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+let toastTimer;
+function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.style.display='none',2800)}
+
+render();
+})();
+</script>
+</body>
+</html>
